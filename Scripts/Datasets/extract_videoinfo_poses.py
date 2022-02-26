@@ -2,11 +2,63 @@ import glob
 import numpy as np
 import cv2
 from skimage.metrics import structural_similarity as ssim
-import json
+import json 
 import os
 import shutil
 
-from FencingAnalysis.BodyframeHelper import get_player_skeletons
+
+def find_bbox(keypoints):
+    keypoints_copy = keypoints
+    to_delete = []
+    cnt = 0
+    for kp in keypoints_copy:
+#         print(f"shape:{kp.shape}")
+        pos = (kp[0], kp[1])
+        if (pos == (0, 0)) or (pos == (1, 0)):
+            to_delete.append(cnt)
+        cnt += 1
+    keypoints_copy = np.delete(keypoints_copy, to_delete, 0)
+    return [min(keypoints_copy[:, 0]), max(keypoints_copy[:, 0]), min(keypoints_copy[:, 1]), max(keypoints_copy[:, 1])]
+
+
+def get_player_skeletons(keypoints):
+    all_bbox = []
+    all_conf = []
+    for kp in keypoints:
+        all_bbox.append(find_bbox(kp))
+        all_conf.append(sum(kp[:, 2]))
+
+    all_bbox = np.array(all_bbox)
+    all_conf = np.array(all_conf)
+    filter_arr = all_conf < 10
+    #     print(all_bbox)
+    all_bbox_heights = all_bbox[:, 3] - all_bbox[:, 2]
+    all_bbox_heights[filter_arr] = 0
+    sortresult = list(all_bbox_heights.argsort())
+    top2_bf = sortresult[-2:]
+    if len(top2_bf) == 2:
+        left_bf = top2_bf[0]
+        right_bf = top2_bf[1]
+
+        kp1 = keypoints[top2_bf[0]]
+        kp2 = keypoints[top2_bf[1]]
+
+        center_0 = sum(np.array(find_bbox(kp1))[0:2])
+        center_1 = sum(np.array(find_bbox(kp2))[0:2])
+        if center_0 > center_1:
+            left_bf = top2_bf[1]
+            right_bf = top2_bf[0]
+
+        # Save pose_keypoints
+        pose_keypoints_left = keypoints[left_bf]
+        pose_keypoints_right = keypoints[right_bf]
+        return [pose_keypoints_left, pose_keypoints_right]
+    elif len(top2_bf) == 1:
+        print(f"only 1 skeletons were found")
+        return [keypoints[top2_bf[0]]]
+    else:
+        print(f"No skeletons were found")
+        return []
 
 
 def read_all_videos(path: str, file_format: str = "mp4") -> []:
@@ -68,17 +120,25 @@ def extract_video_info_poses(video_path: str, file_format: str, json_path: str, 
                     with open(json_file, 'rb') as f:
                         jf = json.load(f)
                         all_skeletons = jf["people"]
-                    player_skeletons = get_player_skeletons(all_skeletons)
+                        keypoints = []
+                        for sk in all_skeletons:
+                            keypoints.append(np.array(sk['pose_keypoints_2d']).reshape(25, -1))                    
+                        
+                        for kp in keypoints:
+                            kp[:, 0] = kp[:, 0] / frame.shape[1] # pos_x/width
+                            kp[:, 1] = kp[:, 1] / frame.shape[0] # pos_y/height
+
+                    player_skeletons = get_player_skeletons(keypoints)
                     if len(player_skeletons) != 2:
                         print(f"at frame #{frame_count}")
                 else:
                     print(f"frame #{frame_count} need json file")
                     break
 
-                if len(player_skeletons) > 0:
-                    for sk in player_skeletons:
-                        sk[:, 0] = sk[:, 0] / frame.shape[1] # pos_x/width
-                        sk[:, 1] = sk[:, 1] / frame.shape[0] # pos_y/height
+                # if len(player_skeletons) > 0:
+                #     for sk in player_skeletons:
+                #         sk[:, 0] = sk[:, 0] / frame.shape[1] # pos_x/width
+                #         sk[:, 1] = sk[:, 1] / frame.shape[0] # pos_y/height
                 skeleton_frames.append(player_skeletons)
 
                 # Judging winner
@@ -121,12 +181,12 @@ def extract_video_info_poses(video_path: str, file_format: str, json_path: str, 
         shutil.copy(v, f"{export_path}/{dataset_identifier}/videos/{get_video_index(v):05d}.{file_format}")
 
 if __name__ == "__main__":
-    extract_video_info_poses(video_path="/media/weihao/UNTITLED/tokyo_olymics/videos2",
+    extract_video_info_poses(video_path="../../Datasets/TokyoOlympics/video",
                              file_format='m4v',
-                             json_path="/media/weihao/UNTITLED/tokyo_olymics/output_jsons2",
-                             mask_path=["/media/weihao/UNTITLED/tokyo_olymics/marker_crop/crop_1.png",
-                                          "/media/weihao/UNTITLED/tokyo_olymics/marker_crop/crop_2.png"],
+                             json_path="../../Datasets/TokyoOlympics/openpose_results",
+                             mask_path=["../../Datasets/TokyoOlympics/marker_crop/crop_1.png",
+                                          "../../Datasets/TokyoOlympics/marker_crop/crop_2.png"],
                              mask_bbox=[[578, 655, 606, 682], [672, 655, 700, 682]],
-                             export_path="/media/weihao/UNTITLED/tokyo_olymics/datasets",
-                             dataset_identifier="olympic_batch_2v3"
+                             export_path="../../Results/Datasets",
+                             dataset_identifier="olympic_batch_2v4"
                              )

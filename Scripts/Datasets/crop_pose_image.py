@@ -167,8 +167,8 @@ def crop_pose_image(database_path: str, export_path: str, options: [], window_of
                          )
 
 if __name__ == "__main__":
-    crop_pose_image(database_path="/media/weihao/UNTITLED/tokyo_olymics/datasets/olympic_batch_2v3",
-                    export_path="/media/weihao/UNTITLED/tokyo_olymics/datasets/olympic_batch_2v3/temp",
+    crop_pose_image(database_path="../../Results/Datasets/olympic_batch_2v4",
+                    export_path="../../Results/Datasets/olympic_batch_2v4",
                     options=["pairs"],
                     window_offsets=[-10, 10])
 

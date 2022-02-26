@@ -1,6 +1,7 @@
 import torch
-from model_helpers import device, get_limb_conf, save_model
 from torch import optim, nn
+from Models.model_helpers import device, get_limb_conf, save_model
+
 
 
 class Fight2(nn.Module):
