@@ -1,4 +1,6 @@
-# This project contains the Deep Neural Network models to train fencing game poses and generate new poses and images.
+# Overview
+
+This project contains the Deep Neural Network models to train fencing game poses and generate new poses and images.
 
 ## Folder Structure:
 
