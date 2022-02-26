@@ -4,8 +4,6 @@ This project contains the Deep Neural Network models to train fencing game poses
 
 ## Folder Structure:
 
----
-
 ```java
 - Scripts
 	- Datasets   // scripts for constructing datasets
@@ -19,7 +17,6 @@ This project contains the Deep Neural Network models to train fencing game poses
 
 ## To construct the datasets from scratch:
 
----
 
 1. Download the dataset zip file, which contains the following folders:
     1. video: the video clips
@@ -41,7 +38,6 @@ This project contains the Deep Neural Network models to train fencing game poses
 
 ## Run the Notebook
 
----
 
 The notebook `Notebooks/train_interaction_generator.ipynb` trains an interaction generator by having a neural network to predict the winners poses based on the losers poses and the distance between them. The poses were aligned to their bounding box centers and distances computed with subtracting two bounding box centers.
 
